@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">PlayersApp</string>
+    <string name="data">Load data\n</string>
+</resources>
