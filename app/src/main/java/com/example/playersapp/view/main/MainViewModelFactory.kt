@@ -1,4 +1,4 @@
-package com.example.playersapp.view
+package com.example.playersapp.view.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
