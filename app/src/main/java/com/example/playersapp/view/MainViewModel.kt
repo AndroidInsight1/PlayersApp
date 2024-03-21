@@ -9,9 +9,7 @@ import com.example.playersapp.model.MainRepository
 import com.example.playersapp.model.Players
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import okhttp3.internal.wait
 
 class MainViewModel(private val mainRepository: MainRepository) : ViewModel() {
@@ -22,29 +20,70 @@ class MainViewModel(private val mainRepository: MainRepository) : ViewModel() {
     val errorMessage = MutableLiveData<String>()
 
     fun sequenceNetworkCall() {
-        loading.value = true
-
         viewModelScope.launch {
-            println("Current thread is : ${Thread.currentThread()}")
-            getJerseyData()
+            println("Current thread is ${Thread.currentThread()}")
+            loading.value = true
+            try {
+                val response = mainRepository.getJerseyNumber()
+                if (response.isSuccessful) {
+                    loading.value = false
+                    val jerseyId = response.body()?.last()?.id
+                    jerseyMutableData.postValue(jerseyId)
+
+                    loading.value = true
+                    val playerResponse = mainRepository.getPlayerName()
+                    if (playerResponse.isSuccessful) {
+                        loading.value = false
+                        val playerName = playerResponse.body()
+                        val finalResponse = playerName?.first {
+                            it.id == jerseyId
+                        }
+                        playersMutableData.postValue(finalResponse)
+                    }
+                } else {
+                    onError("Error is ${response.message()}")
+                }
+
+            } catch (e: Exception) {
+                Log.e("Exception is :", "" + e)
+            }
+
         }
     }
 
-    private suspend fun getJerseyData() {
-        try {
-            val response = mainRepository.getJerseyNumber()
-            if (response.isSuccessful) {
+    fun parallelNetworkCall() {
+        viewModelScope.launch {
+            println("Current thread is ${Thread.currentThread()}")
+            loading.value = true
+            try {
+                val response = async {
+                    mainRepository.getJerseyNumber()
+                }
+                val playerResponse = async {
+                    mainRepository.getPlayerName()
+                }
+
+                val jerseyDeffered = response.await()
+                val playerDeffered = playerResponse.await()
+
                 loading.value = false
-                val jerseyId = response.body()?.last()?.id
+
+                val jerseyId = jerseyDeffered.body()?.last()?.id
                 jerseyMutableData.postValue(jerseyId)
 
-            } else {
-                onError("Error is ${response.message()}")
+                val playerName = playerDeffered.body()
+                val finalResponse = playerName?.first {
+                    it.id == jerseyId
+                }
+                playersMutableData.postValue(finalResponse)
+
+            } catch (e: Exception) {
+                Log.e("Exception is :", "" + e)
             }
-        } catch (e: Exception) {
-            Log.e("Exception is :", "" + e)
+
         }
     }
+
 
     private fun onError(message: String) {
         errorMessage.value = message

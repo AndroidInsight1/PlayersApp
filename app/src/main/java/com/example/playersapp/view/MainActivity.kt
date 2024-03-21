@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnParallelApiCall.setOnClickListener{
-           // viewModel.parallelNetworkCall()
+            viewModel.parallelNetworkCall()
         }
 
         viewModel.jerseyMutableData.observe(this){jerseyNumbers ->
