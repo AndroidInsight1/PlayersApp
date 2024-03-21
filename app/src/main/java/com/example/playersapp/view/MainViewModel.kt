@@ -9,7 +9,9 @@ import com.example.playersapp.model.MainRepository
 import com.example.playersapp.model.Players
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.internal.wait
 
 class MainViewModel(private val mainRepository: MainRepository) : ViewModel() {
@@ -20,9 +22,28 @@ class MainViewModel(private val mainRepository: MainRepository) : ViewModel() {
     val errorMessage = MutableLiveData<String>()
 
     fun sequenceNetworkCall() {
+        loading.value = true
+
+        viewModelScope.launch {
+            println("Current thread is : ${Thread.currentThread()}")
+            getJerseyData()
+        }
     }
 
-    fun parallelNetworkCall() {
+    private suspend fun getJerseyData() {
+        try {
+            val response = mainRepository.getJerseyNumber()
+            if (response.isSuccessful) {
+                loading.value = false
+                val jerseyId = response.body()?.last()?.id
+                jerseyMutableData.postValue(jerseyId)
+
+            } else {
+                onError("Error is ${response.message()}")
+            }
+        } catch (e: Exception) {
+            Log.e("Exception is :", "" + e)
+        }
     }
 
     private fun onError(message: String) {

@@ -43,7 +43,32 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnParallelApiCall.setOnClickListener{
-            viewModel.parallelNetworkCall()
+           // viewModel.parallelNetworkCall()
         }
+
+        viewModel.jerseyMutableData.observe(this){jerseyNumbers ->
+            if(jerseyNumbers != null){
+                tvJerseyData.text = jerseyNumbers.toString()
+            }
+        }
+
+        viewModel.playersMutableData.observe(this){playerName ->
+            if(playerName != null){
+                tvPlayerName.text = playerName.name
+            }
+        }
+
+        viewModel.loading.observe(this){
+            if(it){
+                progressBar?.visibility = View.VISIBLE
+            }else {
+                progressBar?.visibility = View.GONE
+            }
+        }
+
+        viewModel.errorMessage.observe(this){
+            Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
+        }
+
    }
 }
